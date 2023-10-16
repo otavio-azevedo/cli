@@ -589,6 +589,8 @@ namespace Cmf.CLI.Handlers
 
             FinalArchive(packageOutputDir, outputDir);
 
+            packageOutputDir.Delete(true);
+
             Log.Debug($"{outputDir.FullName}/{CmfPackage.ZipPackageName} created");
             Log.Information($"{CmfPackage.PackageName} packed");
 

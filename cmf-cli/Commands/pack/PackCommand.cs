@@ -122,7 +122,10 @@ namespace Cmf.CLI.Commands
             finally
             {
                 // Clean-Up
-                packageOutputDir.Delete(true);
+                if(packageOutputDir.Exists)
+                {
+                    packageOutputDir.Delete(true);
+                }
             }
         }
     }
