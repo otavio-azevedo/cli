@@ -57,8 +57,15 @@ namespace Cmf.CLI.Core.Objects
         [JsonIgnore]
         public CmfPackage CmfPackage { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether this instance was processed
+        /// before or after a pack or build operation
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is set; otherwise, <c>false</c>.
+        /// </value>
         [JsonIgnore]
-        public bool IsSet { get; set; }
+        public bool IsProcessed { get; set; }
         #endregion
 
         #region Public Methods

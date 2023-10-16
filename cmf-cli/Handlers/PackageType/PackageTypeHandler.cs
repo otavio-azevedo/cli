@@ -140,7 +140,8 @@ namespace Cmf.CLI.Handlers
 
             foreach (var relatedPackage in CmfPackage.RelatedPackages ?? new())
             {
-                RelatedPackagesHandlers.Add(relatedPackage, PackageTypeFactory.GetPackageTypeHandler(relatedPackage.CmfPackage));
+                var relatedPackageFromCache = ExecutionContext.RelatedPackagesCache.FirstOrDefault(rpc => rpc.CmfPackage.PackageName == relatedPackage.CmfPackage.PackageName);
+                RelatedPackagesHandlers.Add(relatedPackageFromCache, PackageTypeFactory.GetPackageTypeHandler(relatedPackage.CmfPackage));
             }
         }
 
@@ -515,10 +516,10 @@ namespace Cmf.CLI.Handlers
         {
             #region Pre-Build Actions
 
-            foreach(var relatedPackageHandler in RelatedPackagesHandlers.Where(rp => !rp.Key.IsSet && rp.Key.PreBuild))
+            foreach(var relatedPackageHandler in RelatedPackagesHandlers.Where(rp => !rp.Key.IsProcessed && rp.Key.PreBuild))
             {
                 relatedPackageHandler.Value.Build();
-                relatedPackageHandler.Key.IsSet = true;
+                relatedPackageHandler.Key.IsProcessed = true;
             }
 
             #endregion Pre-Build Actions
@@ -532,12 +533,19 @@ namespace Cmf.CLI.Handlers
                 }
             }
 
+            // Set Package as processed in cache
+            var packageFromCache = ExecutionContext.RelatedPackagesCache.FirstOrDefault(rp => rp.CmfPackage.PackageName == CmfPackage.PackageName);
+            if (packageFromCache != null)
+            {
+                packageFromCache.IsProcessed = true;
+            }
+
             #region Post-Build Actions
 
-            foreach (var relatedPackageHandler in RelatedPackagesHandlers.Where(rp => !rp.Key.IsSet && rp.Key.PostBuild))
+            foreach (var relatedPackageHandler in RelatedPackagesHandlers.Where(rp => !rp.Key.IsProcessed && rp.Key.PostBuild))
             {
                 relatedPackageHandler.Value.Build();
-                relatedPackageHandler.Key.IsSet = true;
+                relatedPackageHandler.Key.IsProcessed = true;
             }
 
             #endregion Post-Build Actions
@@ -552,11 +560,10 @@ namespace Cmf.CLI.Handlers
         {
             #region Pre-Pack Actions
 
-            foreach (var relatedPackageHandler in RelatedPackagesHandlers.Where(rp => !rp.Key.IsSet && rp.Key.PrePack))
+            foreach (var relatedPackageHandler in RelatedPackagesHandlers.Where(rp => !rp.Key.IsProcessed && rp.Key.PrePack))
             {
                 var relatedPackagPackageOutputDir = FileSystemUtilities.GetPackageOutputDir(relatedPackageHandler.Key.CmfPackage, packageOutputDir, fileSystem);
                 relatedPackageHandler.Value.Pack(relatedPackagPackageOutputDir, outputDir);
-                relatedPackageHandler.Key.IsSet = true;
             }
 
             #endregion Pre-Pack Actions
@@ -591,16 +598,22 @@ namespace Cmf.CLI.Handlers
 
             packageOutputDir.Delete(true);
 
+            // Set Package as processed in cache
+            var packageFromCache = ExecutionContext.RelatedPackagesCache.FirstOrDefault(rp => rp.CmfPackage.PackageName == CmfPackage.PackageName);
+            if(packageFromCache != null)
+            {
+                packageFromCache.IsProcessed = true;
+            }
+
             Log.Debug($"{outputDir.FullName}/{CmfPackage.ZipPackageName} created");
             Log.Information($"{CmfPackage.PackageName} packed");
 
             #region Post-Pack Actions
 
-            foreach (var relatedPackageHandler in RelatedPackagesHandlers.Where(rp => !rp.Key.IsSet && rp.Key.PostPack))
+            foreach (var relatedPackageHandler in RelatedPackagesHandlers.Where(rp => !rp.Key.IsProcessed && rp.Key.PostPack))
             {
                 var relatedPackagPackageOutputDir = FileSystemUtilities.GetPackageOutputDir(relatedPackageHandler.Key.CmfPackage, packageOutputDir, fileSystem);
                 relatedPackageHandler.Value.Pack(relatedPackagPackageOutputDir, outputDir);
-                relatedPackageHandler.Key.IsSet = true;
             }
 
             #endregion Post-Pack Actions
